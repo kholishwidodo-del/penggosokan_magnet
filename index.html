@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<title>Simulasi Magnet Gosok - Mohamad Kholish Widodo</title>
+<style>
+ body{font-family:Arial;margin:0;padding:20px;background:#fff8cc;display:flex;justify-content:center}
+ .container{width:760px}
+ h1{text-align:center;font-size:22px;margin:0}
+ .ident{text-align:center;margin-bottom:12px;color:#333}
+ #canvas{width:100%;height:520px;background:white;border:1px solid #aaa;border-radius:8px;cursor:crosshair}
+ .panel{margin-top:12px;display:flex;gap:20px;align-items:center;justify-content:center}
+ select,button{padding:6px 10px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Simulasi Pembuatan Magnet dengan Menggosok</h1>
+<div class="ident">Dibuat Oleh: Mohamad Kholish Widodo, S.Pd., M.Pd. (MTsN 1 Kota Malang)</div>
+
+<div class="panel">
+ <div>
+   Jenis Logam:<br>
+   <select id="metalSel">
+     <option value="iron">Besi (mudah termagnetisasi, cepat hilang)</option>
+     <option value="steel">Baja (lebih lama termagnetisasi, permanen)</option>
+   </select>
+ </div>
+ <div>
+   Pilih Kutub Magnet:<br>
+   <select id="poleSel">
+     <option value="north">U (Merah)</option>
+     <option value="south">S (Biru)</option>
+   </select>
+ </div>
+ <div><br><button id="resetBtn">Reset</button></div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+
+<script>
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+
+function resize(){
+ const r=canvas.getBoundingClientRect();
+ canvas.width=r.width;
+ canvas.height=r.height;
+}
+resize();
+
+const metalSel=document.getElementById('metalSel');
+const poleSel=document.getElementById('poleSel');
+const resetBtn=document.getElementById('resetBtn');
+// suara dihilangkan
+
+// BALOK LOGAM — posisi dibuat aman & terlihat
+const block={x:120,y:260,w:520,h:80,northLevel:0,southLevel:0};
+
+// MAGNET — posisi awal dekat batang logam (tampak)
+let magnet={x:260,y:150,w:20,h:120,grab:false,offX:0,offY:0};
+
+const REAL_RED="rgb(255,0,0)";
+const REAL_BLUE="rgb(0,0,255)";
+
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ // GRADIENT LOGAM
+ let redIntensity=Math.min(1,block.northLevel/60);
+ let blueIntensity=Math.min(1,block.southLevel/60);
+
+ ctx.fillStyle="#ccc";
+ ctx.fillRect(block.x,block.y,block.w,block.h);
+
+ let grad=ctx.createLinearGradient(block.x,0,block.x+block.w,0);
+ if(poleSel.value==='north'){
+   grad.addColorStop(0,`rgba(255,0,0,${redIntensity})`);
+   grad.addColorStop(1,`rgba(0,0,255,${blueIntensity})`);
+ }else{
+   grad.addColorStop(0,`rgba(0,0,255,${blueIntensity})`);
+   grad.addColorStop(1,`rgba(255,0,0,${redIntensity})`);
+ }
+ ctx.fillStyle=grad;
+ ctx.fillRect(block.x,block.y,block.w,block.h);
+
+ // TEKS INSTRUKSI
+ ctx.fillStyle="#000";
+ ctx.font="16px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("Gosokkan magnet ke batang logam dari arah kiri ke kanan", block.x + block.w/2, block.y + block.h + 28);
+
+ // GAMBAR MAGNET
+ ctx.save();
+ ctx.translate(magnet.x, magnet.y);
+ ctx.rotate(0.25);
+ if(poleSel.value==='north'){
+   ctx.fillStyle=REAL_BLUE;
+   ctx.fillRect(-10,-80,20,60);
+   ctx.fillStyle=REAL_RED;
+   ctx.fillRect(-10,-20,20,40);
+ } else {
+   ctx.fillStyle=REAL_RED;
+   ctx.fillRect(-10,-80,20,60);
+   ctx.fillStyle=REAL_BLUE;
+   ctx.fillRect(-10,-20,20,40);
+ }
+ ctx.restore();
+
+ requestAnimationFrame(draw);
+}
+
+draw();
+
+// ——————————————— INTERAKSI ———————————————
+function pos(e){const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function hitMag(p){return p.x>magnet.x-20 && p.x<magnet.x+20 && p.y>magnet.y-100 && p.y<magnet.y+100;}
+
+let lastSoundTime=0;
+
+canvas.addEventListener('mousedown',e=>{
+ let p=pos(e);
+ if(hitMag(p)){
+   magnet.grab=true;
+   magnet.offX=p.x-magnet.x;
+   magnet.offY=p.y-magnet.y;
+ }
+});
+window.addEventListener('mouseup',()=>magnet.grab=false);
+
+canvas.addEventListener('mousemove',e=>{
+ let p=pos(e);
+ if(magnet.grab){
+   magnet.x=p.x-magnet.offX;
+   magnet.y=p.y-magnet.offY;
+ }
+
+ // AREA GOSOK
+ if(magnet.grab && p.y>block.y-40 && p.y<block.y+block.h+40){
+   let now=Date.now();
+   // suara gesekan dihilangkan }
+
+   let speed=(metalSel.value==='iron'?1.8:0.7);
+   if(poleSel.value==='north') block.northLevel+=speed;
+   else block.southLevel+=speed;
+ }
+});
+
+resetBtn.addEventListener('click',()=>{
+ block.northLevel=0;
+ block.southLevel=0;
+});
+</script>
+</div>
+</body>
+</html>
